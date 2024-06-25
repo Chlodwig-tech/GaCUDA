@@ -8,7 +8,6 @@
     exit(EXIT_FAILURE); }}
 
 enum MUTATION{ // mutations
-    MUTATION_BIT_FLIP,
     MUTATION_INVERSION,
     MUTATION_OWN, 
     MUTATION_SCRAMBLE,
@@ -136,9 +135,6 @@ template<typename T> void Population<T>::bfitness(int nthreads){
 template<typename T> void Population<T>::mutate(MUTATION mutation_type, float probability){
     switch (mutation_type)
     {
-        case MUTATION_BIT_FLIP:
-            MutationBitFlapKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, size, probability, time(NULL));
-            break;
         case MUTATION_INVERSION:
             MutationInversionKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, size, probability, time(NULL));
             break;

@@ -34,7 +34,6 @@ public:
     __device__ void binit_with_val(DNA val, int tid);
     __device__ void swap_mutate(curandState *state);
     __device__ void inversion_mutate(curandState *state);
-    __device__ void bitflap_mutate(curandState *state);
     __device__ void scramble_mutate(curandState *state);
     __device__ void crossover_arithmetic(curandState *state, Organism *second_parent, Organism *child);
     __device__ void crossover_single_point(curandState *state, Organism *second_parent, Organism *child);
@@ -177,13 +176,6 @@ inversion_mutate(curandState *state){
         start++;
         end--;
     }
-}
-
-template<typename DNA, typename Tfitness, int Size> __device__ void Organism<DNA, Tfitness, Size>::
-bitflap_mutate(curandState *state){
-    int i = curand(state) % Size;
-    int j = curand(state) % (sizeof(DNA) * 8);
-    this->genes[i] ^= (1 << j);
 }
 
 template<typename DNA, typename Tfitness, int Size> __device__ void Organism<DNA, Tfitness, Size>::

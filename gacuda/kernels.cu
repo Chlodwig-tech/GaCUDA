@@ -27,7 +27,6 @@ template<typename T> __global__ void InitOrganismsWithTidKernel(T *organisms, in
 template<typename T, typename DNA> __global__ void InitOrganismsWithValKernel(T *organisms, int size, DNA val);
 template<typename T, typename r> __global__ void LinspaceKernel(T *organisms, int size, r a, r b, bool endpoint);
 template<typename T, typename r, typename DNA> __global__ void LogspaceKernel(T *organisms, int size, r a, r b, DNA base, bool endpoint);
-template<typename T> __global__ void MutationBitFlapKernel(T *organisms, int size, float probability, unsigned long long seed);
 template<typename T> __global__ void MutationInversionKernel(T *organisms, int size, float probability, unsigned long long seed);
 template<typename T> __global__ void MutationOwnKernel(T *organisms, int size, float probability, unsigned long long seed);
 template<typename T> __global__ void MutationScrambleKernel(T *organisms, int size, float probability, unsigned long long seed);
@@ -262,19 +261,6 @@ void LogspaceKernel(T *organisms, int size, r a, r b, DNA base, bool endpoint){
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
     if(tid < size){
         organisms[tid].logspace(a, b, base, endpoint);
-    }
-}
-
-template<typename T> __global__ 
-void MutationBitFlapKernel(T *organisms, int size, float probability, unsigned long long seed){
-    int tid = blockDim.x * blockIdx.x + threadIdx.x;
-    if(tid < size){
-        curandState state;
-        curand_init(seed, tid, 0, &state);
-        if(curand_uniform(&state) * 100.0f < probability){
-            organisms[tid].bitflap_mutate(&state);
-            organisms[tid].fitness();
-        }
     }
 }
 
