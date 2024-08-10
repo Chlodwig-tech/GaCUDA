@@ -23,6 +23,9 @@ enum CROSSOVER{ // crossovers
 };
 
 template<typename T> class Population{
+    using DNA = typename T::DNA_t;
+    using Tfitness = typename T::Tfitness_t;
+
     T *organisms;
     T *children;
     T* *porganisms;
@@ -39,12 +42,12 @@ public:
     template<typename r> void brandom(r a, r b, int nthreads=1024);
     template<typename r> void linspace(r a, r b, bool endpoint=true);
     template<typename r> void blinspace(r a, r b, bool endpoint=true);
-    template<typename r, typename DNA> void logspace(r a, r b, DNA base, bool endpoint=true);
-    template<typename r, typename DNA> void blogspace(r a, r b, DNA base, bool endpoint=true);
+    template<typename r> void logspace(r a, r b, DNA base, bool endpoint=true);
+    template<typename r> void blogspace(r a, r b, DNA base, bool endpoint=true);
     template<typename r> void plinspace(r a, r b, bool endpoint=true);
     template<typename r> void bplinspace(r a, r b, bool endpoint=true);
-    template<typename r, typename DNA> void plogspace(r a, r b, DNA base, bool endpoint=true);
-    template<typename r, typename DNA> void bplogspace(r a, r b, DNA base, bool endpoint=true);
+    template<typename r> void plogspace(r a, r b, DNA base, bool endpoint=true);
+    template<typename r> void bplogspace(r a, r b, DNA base, bool endpoint=true);
     void fitness();
     void bfitness(int nthreads=1024);
     void mutate(MUTATION mutation_type, float probability=1.0f);
@@ -53,8 +56,8 @@ public:
     void sortOrganisms();
     void init_organisms();
     void init_organisms_with_tid();
-    template<typename DNA> void init_organisms_with_val(DNA val);
-    template<typename DNA> void binit_organisms_with_val(DNA val);
+    void init_organisms_with_val(DNA val);
+    void binit_organisms_with_val(DNA val);
 
     void printP(int max=-1);
     void print(int max=-1);
@@ -107,19 +110,19 @@ template<typename T> template<typename r> void Population<T>::bplinspace(r a, r 
     BPLinspaceKernel<<<size, 1024, 0, stream>>>(organisms, size, a, b, endpoint);
 }
 
-template<typename T> template<typename r, typename DNA> void Population<T>::logspace(r a, r b, DNA base, bool endpoint){
+template<typename T> template<typename r> void Population<T>::logspace(r a, r b, DNA base, bool endpoint){
     LogspaceKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, size, a, b, base, endpoint);
 }
 
-template<typename T> template<typename r, typename DNA> void Population<T>::blogspace(r a, r b, DNA base, bool endpoint){
+template<typename T> template<typename r> void Population<T>::blogspace(r a, r b, DNA base, bool endpoint){
     BLogspaceKernel<<<size, 1024, 0, stream>>>(organisms, size, a, b, base, endpoint);
 }
 
-template<typename T> template<typename r, typename DNA> void Population<T>::plogspace(r a, r b, DNA base, bool endpoint){
+template<typename T> template<typename r> void Population<T>::plogspace(r a, r b, DNA base, bool endpoint){
     PLogspaceKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, size, a, b, base, endpoint);
 }
 
-template<typename T> template<typename r, typename DNA> void Population<T>::bplogspace(r a, r b, DNA base, bool endpoint){
+template<typename T> template<typename r> void Population<T>::bplogspace(r a, r b, DNA base, bool endpoint){
     BPLogspaceKernel<<<size, 1024, 0, stream>>>(organisms, size, a, b, base, endpoint);
 }
 
@@ -128,8 +131,7 @@ template<typename T> void Population<T>::fitness(){
 }
 
 template<typename T> void Population<T>::bfitness(int nthreads){
-    auto fval = helper.get_fvalue();
-    BFitnessKernel<T, decltype(fval)><<<size, nthreads, nthreads * sizeof(fval), stream>>>(organisms, nthreads);
+    BFitnessKernel<T, Tfitness><<<size, nthreads, nthreads * sizeof(Tfitness), stream>>>(organisms, nthreads);
 }
 
 template<typename T> void Population<T>::mutate(MUTATION mutation_type, float probability){
@@ -196,11 +198,11 @@ template<typename T> void Population<T>::init_organisms_with_tid(){
     InitOrganismsWithTidKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, size);
 }
 
-template<typename T> template<typename DNA> void Population<T>::init_organisms_with_val(DNA val){
+template<typename T> void Population<T>::init_organisms_with_val(DNA val){
     InitOrganismsWithValKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, size, val);
 }
 
-template<typename T> template<typename DNA> void Population<T>::binit_organisms_with_val(DNA val){
+template<typename T> void Population<T>::binit_organisms_with_val(DNA val){
     BInitOrganismsWithValKernel<<<size, 1024, 0, stream>>>(organisms, size, val);
 }
 

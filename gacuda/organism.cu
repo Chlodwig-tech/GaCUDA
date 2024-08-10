@@ -11,6 +11,10 @@ protected:
     Tfitness fvalue;
 
 public:
+
+    using DNA_t = DNA;
+    using Tfitness_t = Tfitness;
+
     __device__ void fitness(){}
     __device__ Tfitness fitness_part(int tid){}
     __device__ void print(){}
@@ -39,7 +43,6 @@ public:
     __device__ void crossover_single_point(curandState *state, Organism *second_parent, Organism *child);
     __device__ void crossover_two_point(curandState *state, Organism *second_parent, Organism *child);
     __device__ void crossover_uniform(curandState *state, Organism *second_parent, Organism *child);
-    __host__ __device__ Tfitness get_fvalue();
     __host__ __device__ int get_size();
     __device__ void Setf(Tfitness fval);
     __device__ void SetfMax();
@@ -238,11 +241,6 @@ crossover_uniform(curandState *state, Organism *second_parent, Organism *child){
         int a = curand(state) % 2;
         child->genes[i] = a == 0 ? this->genes[i] : second_parent->genes[i];
     }
-}
-
-template<typename DNA, typename Tfitness, int Size> __host__ __device__ Tfitness Organism<DNA, Tfitness, Size>::
-get_fvalue(){
-    return this->fvalue;
 }
 
 template<typename DNA, typename Tfitness, int Size> __host__ __device__ int Organism<DNA, Tfitness, Size>::
