@@ -23,6 +23,7 @@ enum CROSSOVER{ // crossovers
 };
 
 template<typename T> class Population{
+protected:
     using DNA = typename T::DNA_t;
     using Tfitness = typename T::Tfitness_t;
 

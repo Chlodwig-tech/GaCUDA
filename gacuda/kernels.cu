@@ -20,6 +20,7 @@ template<typename T> __global__ void CrossoverOwnKernel(T *organisms, T *childre
 template<typename T> __global__ void CrossoverSinglePointKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
 template<typename T> __global__ void CrossoverTwoPointKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
 template<typename T> __global__ void CrossoverUniformKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
+template<typename T> __global__ void DemeMigrateKernel(T* *porganisms, int *migrations, int Deme_num, int deme_size);
 template<typename T> __global__ void FitnessKernel(T *organisms, int size);
 template<typename T> __global__ void InitKernel(T *organisms, T* *porganisms, T *children, T* *pchildren, int size);
 template<typename T> __global__ void InitOrganismsKernel(T *organisms, int size);
@@ -205,6 +206,19 @@ void CrossoverUniformKernel(T *organisms, T *children, bool *ichildren, int size
     }else{
         ichildren[tid] = false;
     }
+}
+
+template<typename T> __global__ 
+void DemeMigrateKernel(T* *porganisms, int *migrations, int Deme_num, int deme_size){
+    int tid = threadIdx.x;
+    int bid = blockIdx.x;
+
+    if(tid < deme_size && migrations[bid] != -1 && bid < migrations[bid]){
+        T *temp = porganisms[bid * deme_size + tid];
+        porganisms[bid * deme_size + tid] = porganisms[migrations[bid] * deme_size + tid];
+        porganisms[migrations[bid] * deme_size + tid] = temp;
+    }
+
 }
 
 template<typename T> __global__ 
