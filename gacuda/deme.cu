@@ -29,6 +29,12 @@ public:
     void deme_migrate();
 };
 
+template<typename T, int Deme_num> class SteppingStoneDeme : public Deme<T, Deme_num>{
+public:
+    SteppingStoneDeme(int size) : Deme<T, Deme_num>(size){}
+    void deme_migrate();
+};
+
 
 
 template<typename T, int Deme_num> void Deme<T, Deme_num>::deme_sort(){
@@ -113,7 +119,7 @@ template<typename T, int Deme_num> void IslandDeme<T, Deme_num>::deme_migrate(){
     }
     for(int i = 0; i < Deme_num; i++){
         int random_deme = distrib(gen);
-        if(migrations[random_deme] == -1){
+        if(migrations[i] == -1 && migrations[random_deme] == -1 && i != random_deme){
             migrations[i] = random_deme;
             migrations[random_deme] = i;
         }
@@ -121,25 +127,18 @@ template<typename T, int Deme_num> void IslandDeme<T, Deme_num>::deme_migrate(){
 
     CUDA_CALL(cudaMalloc((void **)&dmigrations, Deme_num * sizeof(int)), "IslandDeme migration dmigrations cudaMalloc");
     CUDA_CALL(cudaMemcpy(dmigrations, migrations, Deme_num * sizeof(int), cudaMemcpyHostToDevice), "IslandDeme migration dmigrations cudaMemcpy");
-    DemeMigrateKernel<<<Deme_num, 1024, 0, this->stream>>>(this->porganisms, dmigrations, Deme_num, deme_size);
+    DemeIslandMigrateKernel<<<Deme_num, 1024, 0, this->stream>>>(this->porganisms, dmigrations, Deme_num, deme_size);
     CUDA_CALL(cudaFree(dmigrations), "IslandDeme migration dmigrations cudaFree");
 }
 
 template<typename T, int Deme_num> void RingDeme<T, Deme_num>::deme_migrate(){
     int deme_size = this->size / Deme_num;
+    DemeRingMigrateKernel<<<deme_size / 1024 + 1, 1024, 0, this->stream>>>(this->porganisms, Deme_num, deme_size);
+}
 
-    int migrations[Deme_num];
-    int *dmigrations;
-
-    migrations[0] = Deme_num - 1;
-    for(int i = 1; i < Deme_num - 1; i++){
-        migrations[i] = i + 1;
-    }
-
-    CUDA_CALL(cudaMalloc((void **)&dmigrations, Deme_num * sizeof(int)), "RingDeme migration dmigrations cudaMalloc");
-    CUDA_CALL(cudaMemcpy(dmigrations, migrations, Deme_num * sizeof(int), cudaMemcpyHostToDevice), "RingDeme migration dmigrations cudaMemcpy");
-    DemeMigrateKernel<<<Deme_num, 1024, 0, this->stream>>>(this->porganisms, dmigrations, Deme_num, deme_size);
-    CUDA_CALL(cudaFree(dmigrations), "RingDeme migration dmigrations cudaFree");
+template<typename T, int Deme_num> void SteppingStoneDeme<T, Deme_num>::deme_migrate(){
+    int deme_size = this->size / Deme_num;
+    DemeSteppingStoneMigrateKernel<<<Deme_num - 1, 1024, 0, this->stream>>>(this->porganisms, Deme_num, deme_size);    
 }
 
 #endif // DEME_CU

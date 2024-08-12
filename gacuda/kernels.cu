@@ -20,7 +20,9 @@ template<typename T> __global__ void CrossoverOwnKernel(T *organisms, T *childre
 template<typename T> __global__ void CrossoverSinglePointKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
 template<typename T> __global__ void CrossoverTwoPointKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
 template<typename T> __global__ void CrossoverUniformKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
-template<typename T> __global__ void DemeMigrateKernel(T* *porganisms, int *migrations, int Deme_num, int deme_size);
+template<typename T> __global__ void DemeIslandMigrateKernel(T* *porganisms, int *migrations, int Deme_num, int deme_size);
+template<typename T> __global__ void DemeRingMigrateKernel(T* *porganisms, int Deme_num, int deme_size);
+template<typename T> __global__ void DemeSteppingStoneMigrateKernel(T* *porganisms, int Deme_num, int deme_size);
 template<typename T> __global__ void FitnessKernel(T *organisms, int size);
 template<typename T> __global__ void InitKernel(T *organisms, T* *porganisms, T *children, T* *pchildren, int size);
 template<typename T> __global__ void InitOrganismsKernel(T *organisms, int size);
@@ -209,16 +211,42 @@ void CrossoverUniformKernel(T *organisms, T *children, bool *ichildren, int size
 }
 
 template<typename T> __global__ 
-void DemeMigrateKernel(T* *porganisms, int *migrations, int Deme_num, int deme_size){
+void DemeIslandMigrateKernel(T* *porganisms, int *migrations, int Deme_num, int deme_size){
     int tid = threadIdx.x;
     int bid = blockIdx.x;
 
-    if(tid < deme_size && migrations[bid] != -1 && bid < migrations[bid]){
+    while(tid < deme_size && migrations[bid] != -1 && bid < migrations[bid]){
         T *temp = porganisms[bid * deme_size + tid];
         porganisms[bid * deme_size + tid] = porganisms[migrations[bid] * deme_size + tid];
         porganisms[migrations[bid] * deme_size + tid] = temp;
+        tid += 1024;
     }
+}
 
+template<typename T> __global__ 
+void DemeRingMigrateKernel(T* *porganisms, int Deme_num, int deme_size){
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if(tid < deme_size){
+        T *helper = porganisms[(Deme_num - 1) * deme_size + tid];
+        for(int i = 0; i < Deme_num; i++){
+            T *temp = porganisms[i * deme_size + tid];
+            porganisms[i * deme_size + tid] = helper;
+            helper = temp;
+        }
+    }
+}
+
+template<typename T> __global__ 
+void DemeSteppingStoneMigrateKernel(T* *porganisms, int Deme_num, int deme_size){
+    int tid = threadIdx.x;
+    int bid = blockIdx.x + 1;
+    int half_size = deme_size / 2;
+    while(tid < half_size){
+        T *temp = porganisms[bid * deme_size + tid];
+        porganisms[bid * deme_size + tid] = porganisms[(bid - 1) * deme_size + tid + half_size];
+        porganisms[(bid - 1) * deme_size + tid + half_size] = temp;
+        tid += 1024;
+    }
 }
 
 template<typename T> __global__ 
