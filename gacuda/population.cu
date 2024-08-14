@@ -39,8 +39,8 @@ protected:
 public:
     Population(int size);
     ~Population();
-    template<typename r> void random(r a, r b);
-    template<typename r> void brandom(r a, r b, int nthreads=1024);
+    template<typename r> void random(r a, r b, int rsize=-1);
+    template<typename r> void brandom(r a, r b, int nthreads=1024, int rsize=-1);
     template<typename r> void linspace(r a, r b, bool endpoint=true);
     template<typename r> void blinspace(r a, r b, bool endpoint=true);
     template<typename r> void logspace(r a, r b, DNA base, bool endpoint=true);
@@ -93,12 +93,12 @@ template<typename T> Population<T>::~Population(){
     CUDA_CALL(cudaStreamDestroy(stream), "Population stream destroy");
 }
 
-template<typename T> template<typename r> void Population<T>::random(r a, r b){
-    RandomKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, time(NULL), size, a, b);
+template<typename T> template<typename r> void Population<T>::random(r a, r b, int rsize){
+    RandomKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, time(NULL), rsize == -1 ? size:rsize, a, b);
 }
 
-template<typename T> template<typename r> void Population<T>::brandom(r a, r b, int nthreads){
-    BRandomKernel<<<size, nthreads, 0, stream>>>(organisms, time(NULL), a, b);
+template<typename T> template<typename r> void Population<T>::brandom(r a, r b, int nthreads, int rsize){
+    BRandomKernel<<<rsize == -1 ? size:rsize, nthreads, 0, stream>>>(organisms, time(NULL), a, b);
 }
 
 template<typename T> template<typename r> void Population<T>::linspace(r a, r b, bool endpoint){
