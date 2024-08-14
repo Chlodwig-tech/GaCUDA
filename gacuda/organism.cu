@@ -44,6 +44,7 @@ public:
     __device__ void crossover_two_point(curandState *state, Organism *second_parent, Organism *child);
     __device__ void crossover_uniform(curandState *state, Organism *second_parent, Organism *child);
     __host__ __device__ int get_size();
+    __device__ Tfitness get_fvalue();
     __device__ void Setf(Tfitness fval);
     __device__ void SetfMax();
     __device__ void Set(Organism *other);
@@ -246,6 +247,11 @@ crossover_uniform(curandState *state, Organism *second_parent, Organism *child){
 template<typename DNA, typename Tfitness, int Size> __host__ __device__ int Organism<DNA, Tfitness, Size>::
 get_size(){
     return Size;
+}
+
+template<typename DNA, typename Tfitness, int Size> __device__ Tfitness Organism<DNA, Tfitness, Size>::
+get_fvalue(){
+    return fvalue;
 }
 
 template<typename DNA, typename Tfitness, int Size> __device__ void Organism<DNA, Tfitness, Size>::

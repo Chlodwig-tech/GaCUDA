@@ -1,5 +1,5 @@
-#ifndef SPOPULATION_CU
-#define SPOPULATION_CU
+#ifndef POPULATION_CU
+#define POPULATION_CU
 
 #include "kernels.cu"
 
@@ -31,7 +31,7 @@ protected:
     T *children;
     T* *porganisms;
     T* *pchildren;
-    T helper;
+    T *current_best;
     bool *ichildren;
     int size;
     cudaStream_t stream;
@@ -64,9 +64,13 @@ public:
     void print(int max=-1);
     void print_childrenP(int max=-1);
     void print_children(int max=-1);
+    void print_current_best();
+    void set_current_best(Tfitness val);
 
     cudaStream_t* getStream();
+    Tfitness get_best_value();
 };
+
 
 template<typename T> Population<T>::Population(int size) : size(size){
     CUDA_CALL(cudaMalloc((void **)&organisms, size * sizeof(T)), "Population organisms cudaMalloc");
@@ -74,6 +78,7 @@ template<typename T> Population<T>::Population(int size) : size(size){
     CUDA_CALL(cudaMalloc((void **)&children, size * sizeof(T)), "Population children cudaMalloc");
     CUDA_CALL(cudaMalloc((void **)&pchildren, size * sizeof(T*)), "Population pchildren cudaMalloc");
     CUDA_CALL(cudaMalloc((void **)&ichildren, size * sizeof(bool)), "Population ichildren cudaMalloc");
+    CUDA_CALL(cudaMalloc((void **)&current_best, sizeof(T*)), "Population current_best cudaMalloc");
     InitKernel<<<size / 1024 + 1, 1024>>>(organisms, porganisms, children, pchildren, size);
     CUDA_CALL(cudaStreamCreate(&stream), "Population stream create");
 }
@@ -84,6 +89,7 @@ template<typename T> Population<T>::~Population(){
     CUDA_CALL(cudaFree(children), "Population children cudaFree");
     CUDA_CALL(cudaFree(pchildren), "Population pchildren cudaFree");
     CUDA_CALL(cudaFree(ichildren), "Population ichildren cudaFree");
+    CUDA_CALL(cudaFree(current_best), "Population current_best cudaFree");
     CUDA_CALL(cudaStreamDestroy(stream), "Population stream destroy");
 }
 
@@ -181,6 +187,7 @@ template<typename T> void Population<T>::sortAll(){
             SortAllKernel<<<size / 1024 + 1, 1024, 0, stream>>>(porganisms, pchildren, ichildren, size, j, k);
         }
     }
+    CompareBestKernel<<<1, 1, 0, stream>>>(porganisms, current_best);
 }
 
 template<typename T> void Population<T>::sortOrganisms(){
@@ -223,8 +230,26 @@ template<typename T> void Population<T>::print_children(int max){
     PrintChildrenKernel<<<1, 1, 0, stream>>>(children, ichildren, size, max == -1 ? size:max);
 }
 
+template<typename T> void Population<T>::print_current_best(){
+    PrintKernel<<<1, 1, 0, stream>>>(current_best, 1, 1);
+}
+
+template<typename T> void Population<T>::set_current_best(Tfitness val){
+    SetStartBest<<<1, 1, 0, stream>>>(current_best, val);
+}
+
 template<typename T> cudaStream_t* Population<T>::getStream(){
     return &stream;
 }
 
-#endif // SPOPULATION_CU
+template <typename T> typename Population<T>::Tfitness Population<T>::get_best_value() {
+    Tfitness *val = (Tfitness*)malloc(sizeof(Tfitness));
+    Tfitness *dval;
+    CUDA_CALL(cudaMalloc((void **)&dval, sizeof(Tfitness)), "Population Tfitness cudaMalloc");
+    GetBestValKernel<<<1, 1, 0, stream>>>(current_best, dval);
+    CUDA_CALL(cudaMemcpy(val, dval, sizeof(Tfitness), cudaMemcpyDeviceToHost), "Population val dval cudaMemcpy");
+    CUDA_CALL(cudaFree(dval), "Population Tfitness cudaFree");
+    return val[0];
+}
+
+#endif // POPULATION_CU

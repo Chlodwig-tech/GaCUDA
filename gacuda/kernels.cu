@@ -45,6 +45,10 @@ template<typename T> __global__ void PrintPointersKernel(T* *porganisms, int siz
 template<typename T, typename r> __global__ void RandomKernel(T *organisms, unsigned long long seed, int size, r a, r b);
 template<typename T> __global__ void SortAllKernel(T* *porganisms, T* *pchildren, bool *ichildren, int size, int j, int k);
 
+template<typename T, typename Tfitness> __global__ void SetStartBest(T *current_best, Tfitness val);
+template<typename T> __global__ void CompareBestKernel(T* *porganisms, T *current_best);
+template<typename T, typename Tfitness> __global__ void GetBestValKernel(T *current_best, Tfitness *val);
+
 // __DEVICE__ FUNCTIONS
 
 template<typename T>__device__
@@ -469,6 +473,23 @@ void SortAllKernel(T* *porganisms, T* *pchildren, bool *ichildren, int size, int
         }
         
     }
+}
+
+template<typename T, typename Tfitness> __global__
+void SetStartBest(T *current_best, Tfitness val){
+    current_best->Setf(val);
+}
+
+template<typename T> __global__ 
+void CompareBestKernel(T* *porganisms, T *current_best){
+    if(current_best->is_greater(porganisms[0])){
+        current_best->Set(porganisms[0]);
+    }
+}
+
+template<typename T, typename Tfitness> __global__ 
+void GetBestValKernel(T *current_best, Tfitness *val){
+    val[0] = current_best->get_fvalue();
 }
 
 #endif // KERNELS_CU
