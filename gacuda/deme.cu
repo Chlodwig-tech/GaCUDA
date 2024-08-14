@@ -99,7 +99,7 @@ template<typename T, int Deme_num> void Deme<T, Deme_num>::deme_printP(int max){
     cudaDeviceSynchronize();
     int deme_size = this->size / Deme_num;
     for(int i = 0; i < Deme_num; i++){            
-        printf("Demo %d\n", i);
+        printf("Deme %d\n", i);
         PrintPointersKernel<<<1, 1, 0, this->stream>>>(this->porganisms + i * deme_size, deme_size, max == -1 ? deme_size:max);
         cudaDeviceSynchronize();
     }
