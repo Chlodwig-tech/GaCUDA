@@ -39,6 +39,7 @@ public:
     __device__ void swap_mutate(curandState *state);
     __device__ void inversion_mutate(curandState *state);
     __device__ void scramble_mutate(curandState *state);
+    __device__ void shift_mutate(curandState *state, DNA val);
     __device__ void crossover_arithmetic(curandState *state, Organism *second_parent, Organism *child);
     __device__ void crossover_single_point(curandState *state, Organism *second_parent, Organism *child);
     __device__ void crossover_two_point(curandState *state, Organism *second_parent, Organism *child);
@@ -196,6 +197,13 @@ scramble_mutate(curandState *state){
         this->genes[i] = this->genes[j];
         this->genes[j] = temp;
     }
+}
+
+template<typename DNA, typename Tfitness, int Size> __device__ void Organism<DNA, Tfitness, Size>::
+shift_mutate(curandState *state, DNA val){
+    int i = curand(state) % Size;
+    int j = curand(state) % 2;
+    this->genes[i] += j == 0 ? val:-val;
 }
 
 template<typename DNA, typename Tfitness, int Size> __device__ void Organism<DNA, Tfitness, Size>::

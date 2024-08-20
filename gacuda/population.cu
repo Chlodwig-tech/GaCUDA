@@ -52,6 +52,7 @@ public:
     void fitness();
     void bfitness(int nthreads=1024);
     void mutate(MUTATION mutation_type, float probability=1.0f);
+    void shift_mutate(DNA val, float probability=1.0f);
     void crossover(CROSSOVER crossover_type, float probability=1.0f);
     void sortAll();
     void sortOrganisms();
@@ -157,6 +158,10 @@ template<typename T> void Population<T>::mutate(MUTATION mutation_type, float pr
             MutationSwapKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, size, probability, time(NULL));
             break;
     }
+}
+
+template<typename T> void Population<T>::shift_mutate(DNA val, float probability){
+    MutationShiftKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, size, probability, time(NULL), val);        
 }
 
 template<typename T> void Population<T>::crossover(CROSSOVER crossover_type, float probability){

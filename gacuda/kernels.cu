@@ -33,6 +33,7 @@ template<typename T, typename r, typename DNA> __global__ void LogspaceKernel(T 
 template<typename T> __global__ void MutationInversionKernel(T *organisms, int size, float probability, unsigned long long seed);
 template<typename T> __global__ void MutationOwnKernel(T *organisms, int size, float probability, unsigned long long seed);
 template<typename T> __global__ void MutationScrambleKernel(T *organisms, int size, float probability, unsigned long long seed);
+template<typename T, typename DNA> __global__ void MutationShiftKernel(T *organisms, int size, float probability, unsigned long long seed, DNA val);
 template<typename T> __global__ void MutationSwapKernel(T *organisms, int size, float probability, unsigned long long seed);
 template<typename T, typename r> __global__ void BPLinspaceKernel(T *organisms, int size, r a, r b, bool endpoint);
 template<typename T, typename r> __global__ void PLinspaceKernel(T *organisms, int size, r a, r b, bool endpoint);
@@ -344,6 +345,19 @@ void MutationScrambleKernel(T *organisms, int size, float probability, unsigned 
         curand_init(seed, tid, 0, &state);
         if(curand_uniform(&state) * 100.0f < probability){
             organisms[tid].scramble_mutate(&state);
+            organisms[tid].fitness();
+        }
+    }
+}
+
+template<typename T, typename DNA> __global__ 
+void MutationShiftKernel(T *organisms, int size, float probability, unsigned long long seed, DNA val){
+    int tid = blockDim.x * blockIdx.x + threadIdx.x;
+    if(tid < size){
+        curandState state;
+        curand_init(seed, tid, 0, &state);
+        if(curand_uniform(&state) * 100.0f < probability){
+            organisms[tid].shift_mutate(&state, val);
             organisms[tid].fitness();
         }
     }
