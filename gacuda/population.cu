@@ -67,6 +67,7 @@ public:
     void print_children(int max=-1);
     void print_current_best();
     void set_current_best(Tfitness val);
+    void reset_children();
 
     cudaStream_t* getStream();
     Tfitness get_best_value();
@@ -169,19 +170,19 @@ template<typename T> void Population<T>::crossover(CROSSOVER crossover_type, flo
     switch (crossover_type)
     {
         case CROSSOVER_ARITHMETIC:
-            CrossoverArithmeticKernel<<<children_size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, time(NULL));
+            CrossoverArithmeticKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, size, time(NULL));
             break;
         case CROSSOVER_OWN:
-            CrossoverOwnKernel<<<children_size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, time(NULL));
+            CrossoverOwnKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, size, time(NULL));
             break;
         case CROSSOVER_SINGLE_POINT:
-            CrossoverSinglePointKernel<<<children_size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, time(NULL));
+            CrossoverSinglePointKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, size, time(NULL));
             break;
         case CROSSOVER_TWO_POINT:
-            CrossoverTwoPointKernel<<<children_size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, time(NULL));
+            CrossoverTwoPointKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, size, time(NULL));
             break;
         case CROSSOVER_UNIFORM:
-            CrossoverUniformKernel<<<children_size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, time(NULL));
+            CrossoverUniformKernel<<<size / 1024 + 1, 1024, 0, stream>>>(organisms, children, ichildren, children_size, size, time(NULL));
             break;
     }
 }
@@ -241,6 +242,10 @@ template<typename T> void Population<T>::print_current_best(){
 
 template<typename T> void Population<T>::set_current_best(Tfitness val){
     SetStartBest<<<1, 1, 0, stream>>>(current_best, val);
+}
+
+template<typename T> void Population<T>::reset_children(){
+    ResetChildrenKernel<<<size / 1024 + 1, 1024, 0, stream>>>(ichildren, size);
 }
 
 template<typename T> cudaStream_t* Population<T>::getStream(){

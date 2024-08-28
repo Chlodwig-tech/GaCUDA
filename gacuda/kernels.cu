@@ -15,11 +15,11 @@ template<typename T, typename r> __global__ void BRandomKernel(T *organisms, uns
 template<typename T, typename DNA> __global__ void BInitOrganismsWithValKernel(T *organisms, int size, DNA val);
 template<typename T, typename r> __global__ void BLinspaceKernel(T *organisms, int size, r a, r b, bool endpoint);
 template<typename T, typename r, typename DNA> __global__ void BLogspaceKernel(T *organisms, int size, r a, r b, DNA base, bool endpoint);
-template<typename T> __global__ void CrossoverArithmeticKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
-template<typename T> __global__ void CrossoverOwnKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
-template<typename T> __global__ void CrossoverSinglePointKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
-template<typename T> __global__ void CrossoverTwoPointKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
-template<typename T> __global__ void CrossoverUniformKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed);
+template<typename T> __global__ void CrossoverArithmeticKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed);
+template<typename T> __global__ void CrossoverOwnKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed);
+template<typename T> __global__ void CrossoverSinglePointKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed);
+template<typename T> __global__ void CrossoverTwoPointKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed);
+template<typename T> __global__ void CrossoverUniformKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed);
 template<typename T> __global__ void DemeIslandMigrateKernel(T* *porganisms, int *migrations, int Deme_num, int deme_size);
 template<typename T> __global__ void DemeRingMigrateKernel(T* *porganisms, int Deme_num, int deme_size);
 template<typename T> __global__ void DemeSteppingStoneMigrateKernel(T* *porganisms, int Deme_num, int deme_size);
@@ -45,7 +45,7 @@ template<typename T> __global__ void PrintKernel(T *organisms, int size, int max
 template<typename T> __global__ void PrintPointersKernel(T* *porganisms, int size, int max);
 template<typename T, typename r> __global__ void RandomKernel(T *organisms, unsigned long long seed, int size, r a, r b);
 template<typename T> __global__ void SortAllKernel(T* *porganisms, T* *pchildren, bool *ichildren, int size, int j, int k);
-
+__global__ void ResetChildrenKernel(bool *ichildren, int size);
 template<typename T, typename Tfitness> __global__ void SetStartBest(T *current_best, Tfitness val);
 template<typename T> __global__ void CompareBestKernel(T* *porganisms, T *current_best);
 template<typename T, typename Tfitness> __global__ void GetBestValKernel(T *current_best, Tfitness *val);
@@ -141,76 +141,76 @@ void BLogspaceKernel(T *organisms, int size, r a, r b, DNA base, bool endpoint){
 }
 
 template<typename T> __global__ 
-void CrossoverArithmeticKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed){
+void CrossoverArithmeticKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed){
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
-    if(tid < size){
+    if(tid < children_size){
         curandState state;
         curand_init(seed, tid, 0, &state);
         ichildren[tid] = true;
         int parent_index = curand(&state) % size;
         organisms[tid].crossover_arithmetic(&state, &organisms[parent_index], &children[tid]);
         children[tid].fitness();
-    }else{
+    }else if(tid < size){
         ichildren[tid] = false;
     }
 }
 
 template<typename T> __global__ 
-void CrossoverOwnKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed){
+void CrossoverOwnKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed){
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
-    if(tid < size){
+    if(tid < children_size){
         curandState state;
         curand_init(seed, tid, 0, &state);
         ichildren[tid] = true;
         int parent_index = curand(&state) % size;
         organisms[tid].own_crossover(&state, &organisms[parent_index], &children[tid]);
         children[tid].fitness();
-    }else{
+    }else if(tid < size){
         ichildren[tid] = false;
     }
 }
 
 template<typename T> __global__ 
-void CrossoverSinglePointKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed){
+void CrossoverSinglePointKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed){
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
-    if(tid < size){
+    if(tid < children_size){
         curandState state;
         curand_init(seed, tid, 0, &state);
         ichildren[tid] = true;
         int parent_index = curand(&state) % size;
         organisms[tid].crossover_single_point(&state, &organisms[parent_index], &children[tid]);
         children[tid].fitness();
-    }else{
+    }else if(tid < size){
         ichildren[tid] = false;
     }
 }
 
 template<typename T> __global__ 
-void CrossoverTwoPointKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed){
+void CrossoverTwoPointKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed){
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
-    if(tid < size){
+    if(tid < children_size){
         curandState state;
         curand_init(seed, tid, 0, &state);
         ichildren[tid] = true;
         int parent_index = curand(&state) % size;
         organisms[tid].crossover_two_point(&state, &organisms[parent_index], &children[tid]);
         children[tid].fitness();
-    }else{
+    }else if(tid < size){
         ichildren[tid] = false;
     }
 }
 
 template<typename T> __global__ 
-void CrossoverUniformKernel(T *organisms, T *children, bool *ichildren, int size, unsigned long long seed){
+void CrossoverUniformKernel(T *organisms, T *children, bool *ichildren, int children_size, int size, unsigned long long seed){
     int tid = blockDim.x * blockIdx.x + threadIdx.x;
-    if(tid < size){
+    if(tid < children_size){
         curandState state;
         curand_init(seed, tid, 0, &state);
         ichildren[tid] = true;
         int parent_index = curand(&state) % size;
         organisms[tid].crossover_uniform(&state, &organisms[parent_index], &children[tid]);
         children[tid].fitness();
-    }else{
+    }else if(tid < size){
         ichildren[tid] = false;
     }
 }
@@ -486,6 +486,14 @@ void SortAllKernel(T* *porganisms, T* *pchildren, bool *ichildren, int size, int
             }
         }
         
+    }
+}
+
+__global__ 
+void ResetChildrenKernel(bool *ichildren, int size){
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if(tid < size){
+        ichildren[tid] = false;
     }
 }
 
