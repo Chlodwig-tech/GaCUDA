@@ -21,13 +21,21 @@ public:
         for(int i = 0; i < Size; i++){
             this->genes[i] = i;
         }
-        for(int i = Size - 1; i > 0; i--){
-            int x = curand_uniform(state) * 100;
-            int j = x % (i + 1);
-            int temp = this->genes[i];
-            this->genes[i] = this->genes[j];
-            this->genes[j] = temp;
+    }
+    template<typename r> __device__ void random(curandState *state, r a, r b){
+        for(int i = 0; i < Size; i++){
+            this->genes[i] = i;
         }
+        if(a != b && a != 0){
+            for(int i = Size - 1; i > 0; i--){
+                int x = curand_uniform(state) * 100;
+                int j = x % (i + 1);
+                int temp = this->genes[i];
+                this->genes[i] = this->genes[j];
+                this->genes[j] = temp;
+            }
+        }
+
     }
     __device__ void own_crossover(curandState *state, TSP<Size> *second_parent, TSP<Size> *child){
         int part = curand(state) % Size;
@@ -99,6 +107,7 @@ int main(int argc, char *argv[]){
         int x = -1;
         p.set_current_best(9999999);
         p.random(0, 0);
+        p.random(-5.12f, 5.12f, population_size / 2);
         p.fitness();
         
         int number_of_epochs = 50000;
