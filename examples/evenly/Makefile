@@ -2,13 +2,13 @@
 
 
 rastrigin:
-	nvcc rastrigin.cu -o rastrigin
+	nvcc rastrigin.cu -o rastrigin -lnvidia-ml
 
 tsp:
-	nvcc tsp.cu -o tsp
+	nvcc tsp.cu -o tsp -lnvidia-ml
 
 root_finder:
-	nvcc root_finder.cu -o root_finder
+	nvcc root_finder.cu -o root_finder -lnvidia-ml
 
 .DEFAULT_GOAL := nothing
 

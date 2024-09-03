@@ -4,6 +4,8 @@
 #include <sstream>
 #include <iomanip>
 #include <cstdlib>
+#include <nvml.h>
+#include <cstring>
 #include "../../gacuda/gacuda.h"
 
 template<int Size> class Rastrigin : public Organism<float, float, Size>{
@@ -32,7 +34,53 @@ int main(int argc, char *argv[]){
     const int population_size = std::atoi(argv[1]); // population size
     float mutation_probability = std::atoi(argv[2]);
     float crossover_probability = std::atoi(argv[3]);
+    const char* target_uuid = argv[4];
+    nvmlReturn_t result;
+    nvmlDevice_t device;
+    int num_devices;
+    int cuda_device_id = -1;
+    result = nvmlInit();
+    if (result != NVML_SUCCESS) {
+        std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << std::endl;
+        return 1;
+    }
+    cudaError_t cuda_result = cudaGetDeviceCount(&num_devices);
+    if (cuda_result != cudaSuccess) {
+        std::cerr << "Failed to get CUDA device count: " << cudaGetErrorString(cuda_result) << std::endl;
+        nvmlShutdown();
+        return 1;
+    }
+    for (int i = 0; i < num_devices; ++i) {
+        char uuid[80];
+        result = nvmlDeviceGetHandleByIndex(i, &device);
+        if (result != NVML_SUCCESS) {
+            std::cerr << "Failed to get handle for device " << i << ": " << nvmlErrorString(result) << std::endl;
+            continue;
+        }
 
+        result = nvmlDeviceGetUUID(device, uuid, sizeof(uuid));
+        if (result != NVML_SUCCESS) {
+            std::cerr << "Failed to get UUID for device " << i << ": " << nvmlErrorString(result) << std::endl;
+            continue;
+        }
+
+        if (strcmp(uuid, target_uuid) == 0) {
+            cuda_device_id = i;
+            break;
+        }
+    }
+    if (cuda_device_id == -1) {
+        std::cerr << "No device with UUID " << target_uuid << " was found." << std::endl;
+        nvmlShutdown();
+        return 1;
+    }
+    cuda_result = cudaSetDevice(cuda_device_id);
+    if (cuda_result != cudaSuccess) {
+        std::cerr << "Failed to set CUDA device: " << cudaGetErrorString(cuda_result) << std::endl;
+        nvmlShutdown();
+        return 1;
+    }
+    nvmlShutdown();
     std::stringstream filename;
     filename << "results/rastrigin/output-" << population_size << "-" << mutation_probability << "-" << crossover_probability << ".txt";
     std::ofstream outFile(filename.str());
