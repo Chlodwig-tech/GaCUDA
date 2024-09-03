@@ -21,11 +21,6 @@ public:
         for(int i = 0; i < Size; i++){
             this->genes[i] = i;
         }
-    }
-    template<typename r> __device__ void random(curandState *state, r a, r b){
-        for(int i = 0; i < Size; i++){
-            this->genes[i] = i;
-        }
         if(a != b && a != 0){
             for(int i = Size - 1; i > 0; i--){
                 int x = curand_uniform(state) * 100;
